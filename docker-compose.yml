@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  postgres:
+    container_name: "postgres_socialclub"
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    # volumes:
+    #   - postgres_data:/
+    networks:
+      - common
+
+  redis:
+    container_name: "redis_socialclub"
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - common
+
+  django:
+    container_name: "django_socialclub"
+    build: .
+    command:  sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - common
+
+#  celery:
+#    container_name: "celery_socialclub"
+#    build: .
+#    command:  celery -A socialclub_celery99 --loglevel=info
+#    depends_on:
+#      - redis
+#    networks:
+#      - common
+
+networks:
+  common:
+     name: common

@@ -1,0 +1,19 @@
+<div class="container-fluid">
+    {% extends 'Base.html' %} 
+    {% block content %}
+    <div class="row">
+        <div class="col-md-4 mx-auto col-10">
+            <form class="form" method="POST" action="/post_comment">
+                {% csrf_token %}
+                <input type="hidden" value="/" name="mooo">
+                <textarea name="form-control" name="content" placeholder="What's on your mind?"></textarea>
+                <button type="submit" class="btn btn-primary">Post</button>
+            </form>
+        </div>
+    </div>
+
+    <div id='feedid'>
+    </div>
+
+    {% endblock content %}
+</div>
