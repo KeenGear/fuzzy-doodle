@@ -17,8 +17,6 @@ from .forms import NewCommentForm
 from .serializers import UserSerializer, GroupSerializer, PostSerializer
 import sys
 
-schema_view = get_swagger_view(title='Pastebin API')
-
 def is_users(post_user, logged_user):
     return post_user == logged_user
 
