@@ -1,7 +1,12 @@
 from django.urls import path
 from django.urls.conf import include
-from .views import PostCreateView, PostListView, PostDeleteView, UserPostListsView, PostDetailView, PostUpdateView, FollowersListView, FollowsListView
-# from .views import
+from rest_framework import routers, views
+from .views import PostCreateView, PostListView, PostDeleteView, UserPostListsView, PostDetailView, PostUpdateView, FollowersListView, FollowsListView, post_list
+from . import views
+
+router = routers.DefaultRouter()
+router.register(r'users', views.UserViewSet)
+router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
     path('', PostListView.as_view(), name='blog-home'),
@@ -12,4 +17,7 @@ urlpatterns = [
     path('post/<int:pk>/del/', PostDeleteView.as_view(), name='post-delete'),
     path('user/<str:username>/follows', FollowsListView.as_view(), name='user-follows'),
     path('user/<str:username>/followers', FollowersListView.as_view(), name='user-followers'),
+    path('l/', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/posts', post_list)
 ]

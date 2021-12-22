@@ -1,4 +1,5 @@
 from django.contrib.auth import models
+from django.db.models.query import QuerySet
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User, Group
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -7,7 +8,7 @@ from django.db.models import Count
 from django.http.response import JsonResponse
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.generics import GenericAPIView
@@ -16,6 +17,8 @@ from .models import Post, Comment, Preference
 from .forms import NewCommentForm
 from .serializers import UserSerializer, GroupSerializer, PostSerializer
 import sys
+
+# from commentingApp import serializers
 
 def is_users(post_user, logged_user):
     return post_user == logged_user
@@ -197,3 +200,119 @@ class FollowersListView(ListView):
         data = super().get_context_data(**kwargs)
         data['follow'] = 'followers'
         return data
+
+
+@login_required
+def postpreference(request, postid, userpreference):
+
+    if request.method == 'POST':
+        eachpost = get_object_or_404(Post, id=postid)
+        obj = ''
+        valueobj = ''
+
+        try:
+            obj = Preference.objects.get(user = request.user, post = eachpost)
+            valueobj = obj.value
+            valueobj = int(valueobj)
+            userpreference = int(userpreference)
+
+            if valueobj != userpreference:
+                obj.delete()
+                upref = Preference()
+                upref.post = request.user
+                upref.post = eachpost
+                upref.value = userpreference
+
+                if userpreference == 1 and valueobj != 1:
+                    eachpost.likes += 1
+                    eachpost.dislikes -= 1
+                elif userpreference == 2 and valueobj != 2:
+                    eachpost.likes += 1
+                    eachpost.dislikes -= 1
+                
+                upref.save()
+                eachpost.delete()
+
+                context = {'eachpost': eachpost, 'postid': postid}
+
+                return redirect('#')
+            
+            elif valueobj == userpreference:
+                obj.delete()
+
+                if userpreference == 1:
+                    eachpost.likes -= 1
+                elif userpreference == 2:
+                    eachpost.dislikes -= 1
+
+                eachpost.save()
+
+                context = {'eachpost': eachpost, 'postid': postid}
+
+                return redirect('#')
+        
+        except Preference.DoesNotExist:
+
+            upref = Preference()
+            upref.user = request.user
+            upref.post = eachpost
+            upref.value = userpreference
+            userpreference = int(userpreference)
+
+            if userpreference == 1:
+                eachpost.likes += 1
+            elif userpreference == 2:
+                eachpost.dislikes +=1
+            
+            upref.save()
+            eachpost.save()
+
+            context = {'eachpost': eachpost, 'postid': postid}
+
+            return redirect('#')
+
+    else:
+        eachpost = get_object_or_404(Post, id=postid)
+        context = {'eachpost': eachpost, 'postid': postid}
+
+        return redirect('#')
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all().order_by('-date_joined')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class GroupViewSet(viewsets.ModelViewSet):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+@api_view(['GET', 'POST', 'DELETE'])
+def post_list(request):
+
+    if request.method == 'GET':
+        posts = Post.objects.all()
+        
+        title = request.query_params.get('title', None)
+        
+        if title is not None:
+            posts = posts.filter(title__icontains=title)
+        
+        posts_serializer = PostSerializer(posts, many=True)
+        return JsonResponse(posts_serializer.data, safe=False)
+ 
+    elif request.method == 'POST':
+        post_data = JSONParser().parse(request)
+        post_serializer = PostSerializer(data=post_data)
+        
+        if post_serializer.is_valid():
+            post_serializer.save()
+            return JsonResponse(post_serializer.data, status=status.HTTP_201_CREATED) 
+        return JsonResponse(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        count = Post.objects.all().delete()
+        return JsonResponse({'message': '{} Posts were deleted successfully!'.format(count[0])}, status=status.HTTP_204_NO_CONTENT)
