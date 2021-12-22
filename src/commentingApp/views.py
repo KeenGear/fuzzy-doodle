@@ -29,7 +29,7 @@ PAGIANTION_COUNT = 3
 
 class PostListView(LoginRequiredMixin, ListView):
     model = Post
-    template_name = ''
+    template_name = 'feed/home.html'
     context_object_name = 'posts'
     ordering = ['-date_posted']
     paginate_by = PAGIANTION_COUNT
@@ -41,7 +41,7 @@ class PostListView(LoginRequiredMixin, ListView):
         data_counter = Post.objects.values('author').annotate(author_count=Count('author')).order_by('-author_count')[:6]
 
         for i in data_counter:
-            all_users.append(User.objects.filter(pk=i['auhtor']).first())
+            all_users.append(User.objects.filter(pk=i['author']).first())
 
         data['preference'] = Preference.objects.all()
         data['all_users'] = all_users
@@ -52,13 +52,13 @@ class PostListView(LoginRequiredMixin, ListView):
         qs = Follow.objects.filter(user=user)
         follows = [user]
         for obj in qs:
-            follows.append(obj.follow.user)
+            follows.append(obj.follow_user)
         return Post.objects.filter(author__in=follows).order_by('-date_posted')
 
 
 class UserPostListsView(LoginRequiredMixin, ListView):
     model = Post
-    template_name = '#'
+    template_name = 'feed/user_posts.html'
     context_object_name = 'posts'
     paginate_by = PAGIANTION_COUNT
 
@@ -102,7 +102,7 @@ class UserPostListsView(LoginRequiredMixin, ListView):
 
 class PostDetailView(DetailView):
     model = Post
-    template_name = '#'
+    template_name = 'feed/post_detail.html'
     context_object_name = 'post'
 
     def get_context_data(self, **kwargs):
@@ -123,7 +123,7 @@ class PostDetailView(DetailView):
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
-    template_name = '#'
+    template_name = 'feed/post_delete.html'
     context_object_name = 'post'
     success_url = '/'
 
@@ -134,7 +134,7 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     fields = ['content']
-    template_name = '#'
+    template_name = 'feed/post_new.html'
     success_url = '/'
 
     def form_valid(self, form):
@@ -150,7 +150,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     fields = ['content']
-    template_name = '#'
+    template_name = 'feed/post_new.html'
     success_url = '/'
 
     def form_valid(self, form):
@@ -168,7 +168,7 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
 class FollowsListView(ListView):
     model = Follow
-    template_name = '#'
+    template_name = 'feed/follow.html'
     context_object_name = 'follows'
 
     def visible_user(self):
@@ -186,7 +186,7 @@ class FollowsListView(ListView):
 
 class FollowersListView(ListView):
     model = Follow
-    template_name = '#'
+    template_name = 'feed/follow.html'
     context_object_name = 'follows'
 
     def visible_user(self):
@@ -235,7 +235,7 @@ def postpreference(request, postid, userpreference):
 
                 context = {'eachpost': eachpost, 'postid': postid}
 
-                return redirect('#')
+                return redirect('blog-home')
             
             elif valueobj == userpreference:
                 obj.delete()
@@ -249,7 +249,7 @@ def postpreference(request, postid, userpreference):
 
                 context = {'eachpost': eachpost, 'postid': postid}
 
-                return redirect('#')
+                return redirect('blog-home')
         
         except Preference.DoesNotExist:
 
@@ -269,13 +269,13 @@ def postpreference(request, postid, userpreference):
 
             context = {'eachpost': eachpost, 'postid': postid}
 
-            return redirect('#')
+            return redirect('blog-home')
 
     else:
         eachpost = get_object_or_404(Post, id=postid)
         context = {'eachpost': eachpost, 'postid': postid}
 
-        return redirect('#')
+        return redirect('blog-home')
 
 
 class UserViewSet(viewsets.ModelViewSet):
